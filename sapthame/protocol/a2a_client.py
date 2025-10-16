@@ -19,6 +19,8 @@ class A2AClient:
         Args:
             timeout: Request timeout in seconds
         """
+        self.url = url
+        self.info = self.fetch_agent_info(url)
         self.timeout = timeout
     
     def fetch_agent_info(self, url: str) -> Dict:

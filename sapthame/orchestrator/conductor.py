@@ -92,8 +92,10 @@ class Conductor:
             logging_dir: Optional directory for logging
         """
         logger.info("=" * 60)
-        logger.info("SAPTAMI SETUP - Starting")
+        logger.info("🌻 Sapthame Conductor - Starting")
         logger.info("=" * 60)
+
+        self.conversation_history = ConversationHistory()
         
         # Initialize A2A client
         self.a2a_client = A2AClient()
@@ -123,6 +125,19 @@ class Conductor:
             prompt_loader=load_implementation_prompt,
             a2a_client=self.a2a_client
         )
+
+        self.action_parser = SimpleActionParser()
+        self.action_handler = ActionHandler(
+            executor=command_executor,
+            todo_manager=TodoManager(),
+            scratchpad_manager=ScratchpadManager(),
+            orchestrator_hub=self.orchestrator_hub,
+            model=self.model,
+            temperature=self.temperature,
+            api_key=self.api_key,
+            api_base=self.api_base,
+            logging_dir=logging_dir,  # Pass logging dir for subagent logging
+        )
         
         # Initialize phase executor
         self.phase_executor = PhaseExecutor(
@@ -132,8 +147,9 @@ class Conductor:
         )
         
         # Initialize state
-        self.state = SaptamiState(
-            agent_registry=self.agent_registry
+        self.state = State(
+            agent_registry=self.agent_registry,
+            conversation_history=self.conversation_history,
         )
         
         logger.info("=" * 60)

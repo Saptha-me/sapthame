@@ -104,24 +104,3 @@ class AgentRegistry:
         
         return "\n".join(lines)
     
-    def to_prompt(self) -> str:
-        """Convert registry to prompt format for LLM.
-        
-        Returns:
-            Formatted string for LLM prompt
-        """
-        if not self.agents:
-            return "No agents available."
-        
-        lines = []
-        for agent in self.agents.values():
-            lines.append(f"- **{agent.name}** ({agent.id})")
-            lines.append(f"  - Description: {agent.description}")
-            lines.append(f"  - Skills: {', '.join(agent.get_skill_names())}")
-            
-            if agent.extra_data.get('specialization'):
-                lines.append(f"  - Specialization: {agent.extra_data['specialization']}")
-            
-            lines.append("")
-        
-        return "\n".join(lines)
