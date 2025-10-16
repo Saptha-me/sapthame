@@ -193,6 +193,87 @@ class Conductor:
             'error': result.error,
             'state': self.state.to_dict()
         }
+
+    def run(self, instruction: str, max_turns: int = 50) -> Dict[str, Any]:
+        """Run the orchestrator until completion or max turns.
+        
+        Args:
+            instruction: The main task to complete
+            max_turns: Maximum number of turns before stopping
+            
+        Returns:
+            Final execution summary
+        """
+        turns_executed = 0
+        
+        while not self.state.done and turns_executed < max_turns:
+            turns_executed += 1
+            logger.info(f"Executing turn {turns_executed}")
+            logging.info(f"\n{'='*60}")
+            logging.info(f"ORCHESTRATOR MAIN LOOP - Turn {turns_executed}/{max_turns}")
+            logging.info(f"{'='*60}")
+            
+            try:
+                result = self.execute_turn(instruction, turns_executed)
+                
+                if result['done']:
+                    logger.info(f"Task completed: {result['finish_message']}")
+                    break
+                    
+            except Exception as e:
+                logger.error(f"Error in turn {turns_executed}: {e}")
+                # Could add error to conversation history here
+                
+        return {
+            'completed': self.state.done,
+            'finish_message': self.state.finish_message,
+            'turns_executed': turns_executed,
+            'max_turns_reached': turns_executed >= max_turns
+        }
+
+    def execute_turn(self, instruction: str, turn_num: int) -> Dict[str, Any]:
+        user_message = f"## Current Task\n{instruction}\n\n{self.state.to_prompt()}"
+        llm_response = self._get_llm_response(user_message)
+
+        result = self.executor.execute(llm_response)
+
+        turn = Turn(
+            llm_output=llm_response,
+            actions_executed=result.actions_executed,
+            env_responses=result.env_responses,
+            subagent_trajectories=result.subagent_trajectories
+        )
+
+        self.conversation_history.add_turn(turn)
+        turn_data = {
+                "instruction": instruction,
+                "user_message": user_message,
+                "llm_response": llm_response,
+                "actions_executed": [str(action) for action in result.actions_executed],
+                "env_responses": result.env_responses,
+                "subagent_trajectories": result.subagent_trajectories,
+                "done": result.done,
+                "finish_message": result.finish_message,
+                "has_error": result.has_error,
+                "state_snapshot": self.state.to_dict()
+            }
+        self.turn_logger.log_turn(turn_num, turn_data)
+
+        if result.done:
+            self.state.done = True
+            self.state.finish_message = result.finish_message
+            logger.info(f"🟡 ORCHESTRATOR: Task marked as DONE - {result.finish_message}")
+        else:
+            logger.info(f"🟡 ORCHESTRATOR TURN {turn_num} COMPLETE - Continuing...\n")
+
+        return {
+            'done': result.done,
+            'finish_message': result.finish_message,
+            'has_error': result.has_error,
+            'actions_executed': len(result.actions_executed),
+            'turn': turn
+        }
+        
     
     def _get_llm_response(self, user_message: str, system_message: str) -> str:
         """Get LLM response (following current project pattern).
