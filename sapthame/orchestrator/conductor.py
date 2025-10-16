@@ -1,56 +1,72 @@
-"""Saptami Orchestrator for multi-agent coordination."""
+# |---------------------------------------------------------------|
+# |                                                               |
+# |                  Give Feedback / Get Help                     |
+# |    https://github.com/Saptha-me/sapthame/issues/new/choose    |
+# |                                                               |
+# |---------------------------------------------------------------|
+#
+#  Thank you users! We ❤️ you! - 🌻
 
-import logging
+"""Conductor for multi-agent coordination."""
+
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 
-from src.utils.llm_client import get_llm_response
-from src.orchestrator.saptami_state import SaptamiState
-from src.discovery.agent_registry import AgentRegistry
-from src.protocol.a2a_client import A2AClient
-from src.execution.phase_executor import PhaseExecutor
-from src.phases.research_phase import ResearchPhase
-from src.phases.planning_phase import PlanningPhase
-from src.phases.implementation_phase import ImplementationPhase
-from src.utils.prompt_loader import (
+from sapthame.utils.llm_client import get_llm_response
+from sapthame.orchestrator.saptami_state import SaptamiState
+from sapthame.discovery.agent_registry import AgentRegistry
+from sapthame.protocol.a2a_client import A2AClient
+from sapthame.execution.phase_executor import PhaseExecutor
+from sapthame.phases.research_phase import ResearchPhase
+from sapthame.phases.planning_phase import PlanningPhase
+from sapthame.phases.implementation_phase import ImplementationPhase
+from sapthame.utils.prompt_loader import (
+    load_prompt_from_file,
     load_research_prompt,
     load_planning_prompt,
     load_implementation_prompt
 )
 
-logger = logging.getLogger(__name__)
+from sapthame.utils.logging import get_logger
 
+# Configure logging for the module
+logger = get_logger("sapthame.orchestrator.conductor")
 
-class SaptamiOrchestrator:
-    """Main orchestrator coordinating research, planning, and implementation phases."""
+class Conductor:
+    """Main conductor coordinating research, planning, and implementation phases."""
     
     @staticmethod
     def name() -> str:
-        return "SaptamiOrchestrator"
+        return "SapthaConductor"
     
     def __init__(
         self,
+        system_message_path: Optional[str] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         api_key: Optional[str] = None,
         api_base: Optional[str] = None,
         **kwargs
     ):
-        """Initialize Saptami orchestrator.
+        """Initialize Conductor.
         
         Args:
+            system_message_path: Path to system message file
             model: LLM model to use
             temperature: Temperature for LLM
             api_key: API key for LLM
             api_base: API base URL for LLM
         """
         # Store LLM configuration
-        self.model = model or "claude-3-5-sonnet-20241022"
+        self.system_message_path = system_message_path
+        self.model = model or "claude-sonnet-4-5-20250929"
         self.temperature = temperature or 0.0
         self.api_key = api_key
         self.api_base = api_base
         
-        logger.info(f"SaptamiOrchestrator initialized with model={self.model}")
+        logger.info(f"Conductor initialized with model={self.model}")
+
+        self.system_message = load_prompt_from_file(system_message_path)
         
         # These will be initialized in setup()
         self.agent_registry = None
@@ -59,10 +75,17 @@ class SaptamiOrchestrator:
         self.state = None
         
         # Track messages for token counting
-        self.orchestrator_messages = []
+        self.conductor_messages = []
+
+        self.conversation_history = None
+        self.action_parser = None
+        self.action_handler = None
+
+        self.turn_logger = None
+        self.logging_dir = None
     
     def setup(self, agent_urls: List[str], logging_dir: Optional[Path] = None):
-        """Setup the orchestrator with agent endpoints.
+        """Setup the conductor with agent endpoints.
         
         Args:
             agent_urls: List of agent get-info.json URLs
@@ -171,9 +194,9 @@ class SaptamiOrchestrator:
         ]
         
         # Track messages for token counting
-        if not self.orchestrator_messages:
-            self.orchestrator_messages.append({"role": "system", "content": system_message})
-        self.orchestrator_messages.append({"role": "user", "content": user_message})
+        if not self.conductor_messages:
+            self.conductor_messages.append({"role": "system", "content": system_message})
+        self.conductor_messages.append({"role": "user", "content": user_message})
         
         # Call centralized LLM client
         response = get_llm_response(
@@ -186,6 +209,6 @@ class SaptamiOrchestrator:
         )
         
         # Track assistant response
-        self.orchestrator_messages.append({"role": "assistant", "content": response})
+        self.conductor_messages.append({"role": "assistant", "content": response})
         
         return response
