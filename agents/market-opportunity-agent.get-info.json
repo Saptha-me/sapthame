@@ -1,0 +1,32 @@
+{
+  "id": "market-opportunity-agent",
+  "name": "Market Opportunity Agent",
+  "description": "Evaluates market opportunities, TAM/SAM/SOM, and growth potential",
+  "url": "http://localhost:8002",
+  "version": "1.0.0",
+  "protocolVersion": "1.0",
+  "skills": [
+    {
+      "name": "opportunity_sizing",
+      "description": "Calculate TAM, SAM, and SOM for market opportunities"
+    },
+    {
+      "name": "growth_projection",
+      "description": "Project market growth and revenue potential"
+    },
+    {
+      "name": "segment_analysis",
+      "description": "Analyze market segments and customer personas"
+    }
+  ],
+  "capabilities": {
+    "methodologies": ["top_down", "bottom_up", "value_theory"],
+    "metrics": ["TAM", "SAM", "SOM", "CAGR", "market_share"],
+    "output_formats": ["financial_model", "summary", "presentation"]
+  },
+  "extraData": {
+    "specialization": "market_opportunity",
+    "focus_areas": ["addressable_market", "growth_potential", "revenue_forecasting"]
+  },
+  "agentTrust": "high"
+}

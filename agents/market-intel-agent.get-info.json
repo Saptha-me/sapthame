@@ -1,0 +1,32 @@
+{
+  "id": "market-intel-agent",
+  "name": "Market Intelligence Agent",
+  "description": "Analyzes market context, competitive landscape, and industry trends",
+  "url": "http://localhost:8001",
+  "version": "1.0.0",
+  "protocolVersion": "1.0",
+  "skills": [
+    {
+      "name": "market_analysis",
+      "description": "Analyze market size, growth, and dynamics"
+    },
+    {
+      "name": "competitive_research",
+      "description": "Research competitors and market positioning"
+    },
+    {
+      "name": "trend_identification",
+      "description": "Identify emerging trends and opportunities"
+    }
+  ],
+  "capabilities": {
+    "data_sources": ["web", "reports", "databases"],
+    "analysis_types": ["quantitative", "qualitative"],
+    "output_formats": ["summary", "detailed_report", "visualization"]
+  },
+  "extraData": {
+    "specialization": "market_intelligence",
+    "industry_focus": ["technology", "healthcare", "finance"]
+  },
+  "agentTrust": "high"
+}

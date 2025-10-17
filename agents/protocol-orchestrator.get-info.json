@@ -1,0 +1,32 @@
+{
+  "id": "protocol-orchestrator-agent",
+  "name": "Protocol Orchestrator Agent",
+  "description": "Orchestrates implementation of clinical protocols and procedures",
+  "url": "http://localhost:8004",
+  "version": "1.0.0",
+  "protocolVersion": "1.0",
+  "skills": [
+    {
+      "name": "protocol_implementation",
+      "description": "Implement clinical protocols and procedures"
+    },
+    {
+      "name": "workflow_design",
+      "description": "Design clinical workflows and processes"
+    },
+    {
+      "name": "compliance_checking",
+      "description": "Verify compliance with clinical standards"
+    }
+  ],
+  "capabilities": {
+    "domains": ["healthcare", "clinical_trials", "patient_care"],
+    "standards": ["HL7", "FHIR", "ICD-10", "SNOMED"],
+    "output_formats": ["protocol_document", "workflow_diagram", "checklist"]
+  },
+  "extraData": {
+    "specialization": "clinical_protocols",
+    "focus_areas": ["sepsis_management", "emergency_care", "quality_improvement"]
+  },
+  "agentTrust": "high"
+}

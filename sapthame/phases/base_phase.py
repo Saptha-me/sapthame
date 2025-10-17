@@ -4,7 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Callable
 
-from src.discovery.agent_registry import AgentRegistry
+from sapthame.discovery.agent_registry import AgentRegistry
 
 logger = logging.getLogger(__name__)
 

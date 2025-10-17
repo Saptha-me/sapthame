@@ -31,15 +31,40 @@ We believe single agents are useful, but true intelligence emerges when **agents
 
 ---
 
-## 🚀 Quick Start (Coming Soon)
+## 🚀 Quick Start
+
 ```bash
-# Install CLI
-pip install sapthame
+# Install
+pip install -e .
 
-# Init a new agent
-sapthame init my-agent
+# Run research stage
+saptami run \
+  --id my_research_2025_10_17 \
+  --stage research \
+  --client-question "Analyze market opportunity for AI agents" \
+  --agent market=./agents/market-intel-agent.get-info.json \
+  --out ./runs/my_research
 
-# Connect to another agent
+# Create implementation plan
+saptami run \
+  --id my_plan_2025_10_17 \
+  --stage plan \
+  --plan-out ./plans/my_plan.md \
+  --client-question "Create rollout strategy"
+
+# Execute the plan
+saptami run \
+  --id my_impl_2025_10_18 \
+  --stage implement \
+  --plan-in ./plans/my_plan.md \
+  --agent impl=./agents/protocol-orchestrator.get-info.json \
+  --out ./runs/my_impl
+```
+
+See [CLI_USAGE.md](./CLI_USAGE.md) for detailed documentation.
+
+---
+
 # Saptha - Distributed Agent Orchestrator
 
 A distributed agent orchestration system that coordinates multiple AI agents using the A2A (Agent-to-Agent) protocol. Built with type-safe Python and following DRY principles.

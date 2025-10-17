@@ -13,7 +13,8 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List
 
 from sapthame.utils.llm_client import get_llm_response
-from sapthame.orchestrator.saptami_state import SaptamiState
+from sapthame.orchestrator.state import State
+from sapthame.orchestrator.conversation_history import ConversationHistory
 from sapthame.discovery.agent_registry import AgentRegistry
 from sapthame.protocol.a2a_client import A2AClient
 from sapthame.execution.phase_executor import PhaseExecutor
@@ -124,19 +125,6 @@ class Conductor:
             llm_client=self._get_llm_response,
             prompt_loader=load_implementation_prompt,
             a2a_client=self.a2a_client
-        )
-
-        self.action_parser = SimpleActionParser()
-        self.action_handler = ActionHandler(
-            executor=command_executor,
-            todo_manager=TodoManager(),
-            scratchpad_manager=ScratchpadManager(),
-            orchestrator_hub=self.orchestrator_hub,
-            model=self.model,
-            temperature=self.temperature,
-            api_key=self.api_key,
-            api_base=self.api_base,
-            logging_dir=logging_dir,  # Pass logging dir for subagent logging
         )
         
         # Initialize phase executor

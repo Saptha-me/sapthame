@@ -3,8 +3,8 @@
 import logging
 from typing import Dict, List, Optional
 
-from src.protocol.a2a_client import A2AClient
-from src.discovery.entities.agent_info import AgentInfo
+from sapthame.protocol.a2a_client import A2AClient
+from sapthame.common.models import AgentInfo
 
 logger = logging.getLogger(__name__)
 
@@ -104,3 +104,10 @@ class AgentRegistry:
         
         return "\n".join(lines)
     
+    def to_prompt(self) -> str:
+        """Generate prompt-friendly representation of agents.
+        
+        Returns:
+            Formatted string for LLM prompts
+        """
+        return self.view_all_agents()

@@ -3,12 +3,12 @@
 import logging
 from typing import Optional
 
-from src.phases.research_phase import ResearchPhase
-from src.phases.planning_phase import PlanningPhase
-from src.phases.implementation_phase import ImplementationPhase
-from src.discovery.agent_registry import AgentRegistry
-from src.orchestrator.saptami_state import SaptamiState
-from src.execution.entities.phase_result import PhaseResult
+from sapthame.phases.research_phase import ResearchPhase
+from sapthame.phases.planning_phase import PlanningPhase
+from sapthame.phases.implementation_phase import ImplementationPhase
+from sapthame.discovery.agent_registry import AgentRegistry
+from sapthame.orchestrator.state import State
+from sapthame.common.models import PhaseResult
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class PhaseExecutor:
         self,
         query: str,
         agent_registry: AgentRegistry,
-        state: SaptamiState
+        state: State
     ) -> PhaseResult:
         """Execute all phases sequentially.
         
@@ -58,7 +58,7 @@ class PhaseExecutor:
             logger.info("=" * 60)
             state.current_phase = "research"
             research_output = self.research_phase.execute(query, agent_registry)
-            state.research_summary = research_output
+            state.research_output = research_output
             logger.info("🔍 PHASE 1: RESEARCH - Complete\n")
             
             # Phase 2: Planning
@@ -67,7 +67,7 @@ class PhaseExecutor:
             logger.info("=" * 60)
             state.current_phase = "planning"
             plan_output = self.planning_phase.execute(research_output, agent_registry)
-            state.execution_plan = plan_output
+            state.plan_output = plan_output
             logger.info("📋 PHASE 2: PLANNING - Complete\n")
             
             # Phase 3: Implementation
@@ -76,7 +76,7 @@ class PhaseExecutor:
             logger.info("=" * 60)
             state.current_phase = "implementation"
             impl_output = self.implementation_phase.execute(plan_output, agent_registry)
-            state.implementation_results = impl_output
+            state.implementation_output = impl_output
             logger.info("⚙️  PHASE 3: IMPLEMENTATION - Complete\n")
             
             state.done = True
@@ -94,8 +94,8 @@ class PhaseExecutor:
             return PhaseResult(
                 success=False,
                 summary="",
-                research_output=state.research_summary or "",
-                plan_output=state.execution_plan or "",
-                implementation_output=state.implementation_results or "",
+                research_output=state.research_output or "",
+                plan_output=state.plan_output or "",
+                implementation_output=state.implementation_output or "",
                 error=str(e)
             )

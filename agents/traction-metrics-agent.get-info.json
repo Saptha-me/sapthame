@@ -1,0 +1,32 @@
+{
+  "id": "traction-metrics-agent",
+  "name": "Traction Metrics Agent",
+  "description": "Analyzes business traction, KPIs, and growth metrics",
+  "url": "http://localhost:8003",
+  "version": "1.0.0",
+  "protocolVersion": "1.0",
+  "skills": [
+    {
+      "name": "metrics_analysis",
+      "description": "Analyze key business metrics and KPIs"
+    },
+    {
+      "name": "growth_tracking",
+      "description": "Track and analyze growth trajectories"
+    },
+    {
+      "name": "cohort_analysis",
+      "description": "Perform cohort and retention analysis"
+    }
+  ],
+  "capabilities": {
+    "metric_types": ["revenue", "users", "engagement", "retention", "conversion"],
+    "analysis_methods": ["time_series", "cohort", "funnel", "comparative"],
+    "output_formats": ["dashboard", "report", "insights"]
+  },
+  "extraData": {
+    "specialization": "traction_metrics",
+    "focus_areas": ["growth_rate", "unit_economics", "customer_acquisition"]
+  },
+  "agentTrust": "high"
+}

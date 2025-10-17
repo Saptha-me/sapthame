@@ -3,8 +3,8 @@
 import logging
 from typing import Callable
 
-from src.discovery.agent_registry import AgentRegistry
-from src.protocol.a2a_client import A2AClient
+from sapthame.discovery.agent_registry import AgentRegistry
+from sapthame.protocol.a2a_client import A2AClient
 from sapthame.phases.base_phase import BasePhase
 
 logger = logging.getLogger(__name__)

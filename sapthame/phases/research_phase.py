@@ -1,6 +1,6 @@
 """Research phase engine."""
 
-from src.discovery.agent_registry import AgentRegistry
+from sapthame.discovery.agent_registry import AgentRegistry
 from sapthame.phases.base_phase import BasePhase
 
 
