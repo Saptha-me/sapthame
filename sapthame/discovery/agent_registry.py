@@ -1,113 +1,55 @@
-"""Agent discovery and registry management."""
+"""Agent registry for managing Bindu client URLs."""
 
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List
 
-from sapthame.protocol.a2a_client import A2AClient
-from sapthame.common.models import AgentInfo
+from sapthame.protocol.bindu_client import BinduClient
 
 logger = logging.getLogger(__name__)
 
 
 class AgentRegistry:
-    """Central registry for discovered agents."""
+    """Registry for Bindu agent clients."""
     
-    def __init__(self, a2a_client: A2AClient):
-        """Initialize agent registry.
+    def __init__(self, agent_urls: List[str]):
+        """Initialize agent registry with client URLs.
         
         Args:
-            a2a_client: A2A client for fetching agent info
+            agent_urls: List of agent base URLs
         """
-        self.a2a_client = a2a_client
-        self.agents: Dict[str, AgentInfo] = {}
-        self.skill_index: Dict[str, List[str]] = {}  # skill_name -> agent_ids
-    
-    def discover_agents(self, agent_urls: List[str]):
-        """Discover agents from their get-info.json endpoints.
+        self.clients: Dict[str, BinduClient] = {}
         
-        Args:
-            agent_urls: List of agent URLs or get-info.json URLs
-        """
         for url in agent_urls:
             try:
-                info_data = self.a2a_client.fetch_agent_info(url)
-                agent_info = AgentInfo.from_dict(info_data)
-                self.add_agent(agent_info)
-                logger.info(f"✓ Discovered agent: {agent_info.name} ({agent_info.id})")
+                client = BinduClient(agent_url=url)
+                self.clients[url] = client
+                logger.info(f"✓ Registered agent: {url}")
             except Exception as e:
-                logger.error(f"✗ Failed to discover agent at {url}: {e}")
+                logger.error(f"✗ Failed to register agent at {url}: {e}")
     
-    def add_agent(self, agent_info: AgentInfo):
-        """Add agent to registry and index its skills.
+    def get_client(self, url: str) -> BinduClient:
+        """Get Bindu client by URL.
         
         Args:
-            agent_info: Agent information
-        """
-        self.agents[agent_info.id] = agent_info
-        
-        # Index skills
-        for skill in agent_info.skills:
-            if skill.name not in self.skill_index:
-                self.skill_index[skill.name] = []
-            self.skill_index[skill.name].append(agent_info.id)
-    
-    def get_agent(self, agent_id: str) -> Optional[AgentInfo]:
-        """Get agent by ID.
-        
-        Args:
-            agent_id: Agent identifier
+            url: Agent URL
             
         Returns:
-            AgentInfo or None if not found
+            BinduClient instance
         """
-        return self.agents.get(agent_id)
+        return self.clients.get(url)
     
-    def get_agents_by_skill(self, skill_name: str) -> List[AgentInfo]:
-        """Get all agents with a specific skill.
-        
-        Args:
-            skill_name: Skill to search for
-            
-        Returns:
-            List of agents with the skill
-        """
-        agent_ids = self.skill_index.get(skill_name, [])
-        return [self.agents[aid] for aid in agent_ids if aid in self.agents]
-    
-    def get_all_agents(self) -> List[AgentInfo]:
-        """Get all registered agents.
+    def get_all_clients(self) -> List[BinduClient]:
+        """Get all registered clients.
         
         Returns:
-            List of all agents
+            List of BinduClient instances
         """
-        return list(self.agents.values())
+        return list(self.clients.values())
     
-    def view_all_agents(self) -> str:
-        """Return formatted view of all agents.
+    def get_urls(self) -> List[str]:
+        """Get all registered agent URLs.
         
         Returns:
-            Formatted string of all agents
+            List of agent URLs
         """
-        if not self.agents:
-            return "No agents discovered."
-        
-        lines = ["Available Agents:"]
-        for agent_id, agent in self.agents.items():
-            lines.append(f"\n  [{agent_id}] {agent.name}")
-            lines.append(f"      Description: {agent.description}")
-            lines.append(f"      URL: {agent.url}")
-            lines.append(f"      Skills: {', '.join(agent.get_skill_names())}")
-            
-            specialization = agent.extra_data.get('specialization', 'N/A')
-            lines.append(f"      Specialization: {specialization}")
-            lines.append(f"      Trust Level: {agent.agent_trust}")
-        
-        return "\n".join(lines)
-    
-    def to_prompt(self) -> str:
-        """Generate prompt-friendly representation of agents.
-        
-        Returns:
-            Formatted string for LLM prompts
-        """
-        return self.view_all_agents()
+        return list(self.clients.keys())

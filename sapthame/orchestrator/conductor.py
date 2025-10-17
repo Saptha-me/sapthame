@@ -15,8 +15,9 @@ from typing import Optional, Dict, Any, List
 from sapthame.utils.llm_client import get_llm_response
 from sapthame.orchestrator.state import State
 from sapthame.orchestrator.conversation_history import ConversationHistory
+from sapthame.orchestrator.turn import Turn
 from sapthame.discovery.agent_registry import AgentRegistry
-from sapthame.protocol.a2a_client import A2AClient
+from sapthame.protocol.bindu_client import BinduClient
 from sapthame.execution.phase_executor import PhaseExecutor
 from sapthame.phases.research_phase import ResearchPhase
 from sapthame.phases.planning_phase import PlanningPhase
@@ -27,6 +28,11 @@ from sapthame.utils.prompt_loader import (
     load_planning_prompt,
     load_implementation_prompt
 )
+from sapthame.orchestrator.turn_executor import TurnExecutor
+from sapthame.orchestrator.actions.parser import ActionParser
+from sapthame.orchestrator.actions.handler import ActionHandler
+from sapthame.orchestrator.state_managers.scratchpad import ScratchpadManager
+from sapthame.orchestrator.state_managers.todo import TodoManager
 
 from sapthame.utils.logging import get_logger
 
@@ -71,7 +77,7 @@ class Conductor:
         
         # These will be initialized in setup()
         self.agent_registry = None
-        self.a2a_client = None
+        self.bindu_client = None
         self.phase_executor = None
         self.state = None
         
@@ -81,6 +87,9 @@ class Conductor:
         self.conversation_history = None
         self.action_parser = None
         self.action_handler = None
+        self.executor = None
+        self.scratchpad_manager = None
+        self.todo_manager = None
 
         self.turn_logger = None
         self.logging_dir = None
@@ -98,47 +107,40 @@ class Conductor:
 
         self.conversation_history = ConversationHistory()
         
-        # Initialize A2A client
-        self.a2a_client = A2AClient()
-        
         # Initialize agent registry and discover agents
-        self.agent_registry = AgentRegistry(self.a2a_client)
+        self.agent_registry = AgentRegistry()
         logger.info(f"Discovering {len(agent_urls)} agent(s)...")
         self.agent_registry.discover_agents(agent_urls)
         logger.info(f"✓ Discovered {len(self.agent_registry.agents)} agent(s)")
         
         # Log agent details
         logger.info("\n" + self.agent_registry.view_all_agents())
-        
-        # Initialize phases
-        research_phase = ResearchPhase(
-            llm_client=self._get_llm_response,
-            prompt_loader=load_research_prompt
-        )
-        
-        planning_phase = PlanningPhase(
-            llm_client=self._get_llm_response,
-            prompt_loader=load_planning_prompt
-        )
-        
-        implementation_phase = ImplementationPhase(
-            llm_client=self._get_llm_response,
-            prompt_loader=load_implementation_prompt,
-            a2a_client=self.a2a_client
-        )
-        
-        # Initialize phase executor
-        self.phase_executor = PhaseExecutor(
-            research_phase=research_phase,
-            planning_phase=planning_phase,
-            implementation_phase=implementation_phase
-        )
-        
+
+        # Initialize state managers
+        self.scratchpad_manager = ScratchpadManager()
+        self.todo_manager = TodoManager()
+
         # Initialize state
         self.state = State(
             agent_registry=self.agent_registry,
-            conversation_history=self.conversation_history,
+            conversation_history=self.conversation_history
         )
+        
+        # Initialize action components
+        self.action_parser = ActionParser()
+        self.action_handler = ActionHandler(
+            agent_registry=self.agent_registry,
+            scratchpad_manager=self.scratchpad_manager,
+            todo_manager=self.todo_manager
+        )
+        
+        # Initialize turn executor
+        self.executor = TurnExecutor(
+            action_parser=self.action_parser,
+            action_handler=self.action_handler
+        )
+        
+        
         
         logger.info("=" * 60)
         logger.info("SAPTAMI SETUP - Complete")
@@ -221,7 +223,7 @@ class Conductor:
 
     def execute_turn(self, instruction: str, turn_num: int) -> Dict[str, Any]:
         user_message = f"## Current Task\n{instruction}\n\n{self.state.to_prompt()}"
-        llm_response = self._get_llm_response(user_message)
+        llm_response = self._get_llm_response(user_message, self.system_message)
 
         result = self.executor.execute(llm_response)
 
@@ -229,7 +231,7 @@ class Conductor:
             llm_output=llm_response,
             actions_executed=result.actions_executed,
             env_responses=result.env_responses,
-            subagent_trajectories=result.subagent_trajectories
+            subagent_trajectories=result.agent_trajectories
         )
 
         self.conversation_history.add_turn(turn)
@@ -239,7 +241,7 @@ class Conductor:
                 "llm_response": llm_response,
                 "actions_executed": [str(action) for action in result.actions_executed],
                 "env_responses": result.env_responses,
-                "subagent_trajectories": result.subagent_trajectories,
+                "subagent_trajectories": result.agent_trajectories,
                 "done": result.done,
                 "finish_message": result.finish_message,
                 "has_error": result.has_error,
@@ -261,6 +263,124 @@ class Conductor:
             'actions_executed': len(result.actions_executed),
             'turn': turn
         }
+    
+    def run_research_stage(
+        self,
+        client_question: str,
+        max_turns: int = 20
+    ) -> Dict[str, Any]:
+        """Run research stage with turn-based execution.
+        
+        Args:
+            client_question: The research question
+            max_turns: Maximum number of turns
+            
+        Returns:
+            Research stage result
+        """
+        logger.info("\n" + "=" * 60)
+        logger.info("🔍 RESEARCH STAGE - Starting")
+        logger.info("=" * 60)
+        logger.info(f"Question: {client_question}\n")
+        
+        turns_executed = 0
+        self.state.current_phase = "research"
+        self.state.done = False
+        
+        while not self.state.done and turns_executed < max_turns:
+            turns_executed += 1
+            logger.info(f"\n{'='*60}")
+            logger.info(f"Research Turn {turns_executed}/{max_turns}")
+            logger.info(f"{'='*60}")
+            
+            try:
+                # Build user message with current state
+                user_message = self._build_research_prompt(
+                    client_question=client_question,
+                    scratchpad=self.scratchpad_manager.to_prompt(),
+                    todo=self.todo_manager.to_prompt(),
+                    conversation_history=self.conversation_history.to_prompt()
+                )
+                
+                # Get LLM response
+                llm_response = self._get_llm_response(user_message, self.system_message)
+                
+                # Execute turn
+                result = self.executor.execute(llm_response)
+                
+                # Create turn for history
+                turn = Turn(
+                    llm_output=llm_response,
+                    actions_executed=result.actions_executed,
+                    env_responses=result.env_responses,
+                    subagent_trajectories=result.agent_trajectories
+                )
+                
+                # Add to conversation history
+                self.conversation_history.add_turn(turn)
+                
+                # Log turn if logger available
+                if self.turn_logger:
+                    turn_data = {
+                        "client_question": client_question,
+                        "user_message": user_message,
+                        "llm_response": llm_response,
+                        "actions_executed": [str(action) for action in result.actions_executed],
+                        "env_responses": result.env_responses,
+                        "agent_trajectories": result.agent_trajectories,
+                        "done": result.done,
+                        "finish_message": result.finish_message,
+                        "has_error": result.has_error,
+                        "scratchpad": self.scratchpad_manager.get_content(),
+                        "todo": self.todo_manager.get_status()
+                    }
+                    self.turn_logger.log_turn(turns_executed, turn_data)
+                
+                # Check if done
+                if result.done:
+                    self.state.done = True
+                    self.state.finish_message = result.finish_message
+                    self.state.research_output = result.finish_message
+                    logger.info(f"✓ Research stage complete: {result.finish_message}")
+                    break
+                    
+            except Exception as e:
+                logger.error(f"Error in turn {turns_executed}: {e}", exc_info=True)
+        
+        logger.info("\n" + "=" * 60)
+        logger.info(f"RESEARCH STAGE - {'Complete' if self.state.done else 'Max turns reached'}")
+        logger.info("=" * 60)
+        
+        return {
+            'completed': self.state.done,
+            'finish_message': self.state.finish_message,
+            'turns_executed': turns_executed,
+            'scratchpad': self.scratchpad_manager.get_content(),
+            'todo': self.todo_manager.get_status(),
+            'max_turns_reached': turns_executed >= max_turns
+        }
+    
+    def _build_research_prompt(
+        self,
+        client_question: str,
+        scratchpad: str,
+        todo: str,
+        conversation_history: str
+    ) -> str:
+        """Build research stage prompt."""
+        return f"""## Research Task
+{client_question}
+
+{scratchpad}
+
+{todo}
+
+## Conversation History
+{conversation_history}
+
+## Instructions
+Use the available actions to research this question thoroughly. Query research agents, organize findings in the scratchpad, track remaining questions in the todo list. When you have sufficient information, use the finish_stage action to complete the research.
+"""
         
     
     def _get_llm_response(self, user_message: str, system_message: str) -> str:

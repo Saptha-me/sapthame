@@ -2,28 +2,25 @@
 
 import logging
 
-from src.agents.actions.parsing.action_handler import ActionHandler
-from src.agents.actions.parsing.parser import SimpleActionParser
-from src.agents.actions.entities.actions import (
-    FinishAction,
-)
-from src.agents.env_interaction.entities.execution_result import ExecutionResult
+from sapthame.orchestrator.actions.parser import ActionParser
+from sapthame.orchestrator.actions.handler import ActionHandler
+from sapthame.orchestrator.actions.entities.actions import FinishStageAction
+from sapthame.orchestrator.entities.execution_result import ExecutionResult
 
 logger = logging.getLogger(__name__)
 
 
 class TurnExecutor:
-    """Executes a single turn of agent interaction"""
+    """Executes a single turn of agent interaction."""
     
     def __init__(
         self,
-        action_parser: SimpleActionParser,
-        action_handler: ActionHandler,
+        action_parser: ActionParser,
+        action_handler: ActionHandler
     ):
         self.action_parser = action_parser
         self.action_handler = action_handler
-
-
+    
     def execute(self, llm_output: str) -> ExecutionResult:
         """Execute actions from LLM output and return result.
         
@@ -83,10 +80,10 @@ class TurnExecutor:
                 env_responses.append(output)
                 
                 # Check for finish
-                if isinstance(action, FinishAction):
+                if isinstance(action, FinishStageAction):
                     finish_message = action.message
                     done = True
-                    logger.info(f"Task finished: {finish_message}")
+                    logger.info(f"Stage finished: {finish_message}")
                     break
                     
             except Exception as e:
@@ -94,8 +91,8 @@ class TurnExecutor:
                 env_responses.append(f"[ERROR] Action execution failed: {str(e)}")
                 has_error = True
         
-        # Collect any subagent trajectories from this execution
-        subagent_trajectories = self.action_handler.get_and_clear_subagent_trajectories()
+        # Collect agent trajectories from this execution
+        agent_trajectories = self.action_handler.get_and_clear_agent_trajectories()
         
         return ExecutionResult(
             actions_executed=actions_executed,
@@ -103,5 +100,5 @@ class TurnExecutor:
             has_error=has_error,
             finish_message=finish_message,
             done=done,
-            subagent_trajectories=subagent_trajectories if subagent_trajectories else None
+            agent_trajectories=agent_trajectories if agent_trajectories else None
         )
