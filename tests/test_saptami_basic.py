@@ -46,8 +46,7 @@ def test_saptami_setup_with_mock_agents():
 
 def test_entity_creation():
     """Test entity creation."""
-    from src.discovery.entities.skill import Skill
-    from src.discovery.entities.agent_info import AgentInfo
+    from sapthame.common.models import Skill, AgentInfo
     
     # Create skill
     skill = Skill(name="code_analysis", description="Analyze code")

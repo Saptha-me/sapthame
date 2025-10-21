@@ -83,6 +83,7 @@ class AgentInfo:
     capabilities: Dict[str, Any]
     extra_data: Dict[str, Any]
     agent_trust: str
+    kind: str = "agent"
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "AgentInfo":
@@ -98,7 +99,8 @@ class AgentInfo:
             skills=skills,
             capabilities=data.get("capabilities", {}),
             extra_data=data.get("extraData", {}),
-            agent_trust=data.get("agentTrust", "medium")
+            agent_trust=data.get("agentTrust", "low"),
+            kind=data.get("kind", "agent")
         )
     
     def to_dict(self) -> Dict[str, Any]:
@@ -113,12 +115,17 @@ class AgentInfo:
             "skills": [s.to_dict() for s in self.skills],
             "capabilities": self.capabilities,
             "extraData": self.extra_data,
-            "agentTrust": self.agent_trust
+            "agentTrust": self.agent_trust,
+            "kind": self.kind
         }
     
     def get_skill_names(self) -> List[str]:
         """Get list of skill names."""
         return [skill.name for skill in self.skills]
+    
+    def has_skill(self, skill_name: str) -> bool:
+        """Check if agent has a specific skill."""
+        return skill_name in self.get_skill_names()
 
 
 # ============================================================================

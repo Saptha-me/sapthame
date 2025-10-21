@@ -158,7 +158,9 @@ class Conductor:
 
         
         # Initialize agent registry and discover agents
-        self.agent_registry = AgentRegistry()
+        self.agent_registry = AgentRegistry(
+            
+        )
         logger.info(f"Discovering {len(agent_urls)} agent(s)...")
         self.agent_registry.discover_agents(agent_urls)
         logger.info(f"✓ Discovered {len(self.agent_registry.agents)} agent(s)")
