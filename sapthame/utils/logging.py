@@ -15,7 +15,7 @@ from rich.logging import RichHandler
 from rich.theme import Theme
 from rich.traceback import install as install_rich_traceback
 
-from bindu.settings import app_settings
+from sapthame.settings import app_settings
 
 # Lazy initialization - console created only when needed
 _console: Optional[Console] = None

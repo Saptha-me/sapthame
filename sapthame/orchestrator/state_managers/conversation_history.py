@@ -1,7 +1,7 @@
 from typing import List
 from dataclasses import dataclass, field
 
-from src.agents.env_interaction.entities.turn import Turn
+from .turn import Turn
 
 @dataclass
 class ConversationHistory:

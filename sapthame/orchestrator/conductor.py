@@ -12,29 +12,26 @@
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 
-from sapthame.utils.llm_client import get_llm_response
-from sapthame.orchestrator.state import State
-from sapthame.orchestrator.conversation_history import ConversationHistory
-from sapthame.orchestrator.turn import Turn
-from sapthame.discovery.agent_registry import AgentRegistry
-from sapthame.protocol.bindu_client import BinduClient
-from sapthame.execution.phase_executor import PhaseExecutor
-from sapthame.phases.research_phase import ResearchPhase
-from sapthame.phases.planning_phase import PlanningPhase
-from sapthame.phases.implementation_phase import ImplementationPhase
-from sapthame.utils.prompt_loader import (
+from .utils.llm_client import get_llm_response
+from .state import State
+from .conversation_history import ConversationHistory
+from .turn import Turn
+from .discovery.agent_registry import AgentRegistry
+from .protocol.bindu_client import BinduClient
+from .execution.phase_executor import PhaseExecutor
+from .utils.prompt_loader import (
     load_prompt_from_file,
     load_research_prompt,
     load_planning_prompt,
     load_implementation_prompt
 )
-from sapthame.orchestrator.turn_executor import TurnExecutor
-from sapthame.orchestrator.actions.parser import ActionParser
-from sapthame.orchestrator.actions.handler import ActionHandler
-from sapthame.orchestrator.state_managers.scratchpad import ScratchpadManager
-from sapthame.orchestrator.state_managers.todo import TodoManager
+from .turn_executor import TurnExecutor
+from .actions.parser import ActionParser
+from .actions.handler import ActionHandler
+from .state_managers.scratchpad import ScratchpadManager
+from .state_managers.todo import TodoManager
 
-from sapthame.utils.logging import get_logger
+from .utils.logging import get_logger
 
 # Configure logging for the module
 logger = get_logger("sapthame.orchestrator.conductor")

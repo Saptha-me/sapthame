@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Any
 
-from src.discovery.entities.skill import Skill
+from .skill import Skill
 
 
 @dataclass

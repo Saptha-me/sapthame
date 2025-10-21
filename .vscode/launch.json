@@ -12,7 +12,24 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "Saptami CLI",
+            "name": "Saptami CLI - Research",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "sapthame.cli",
+            "console": "integratedTerminal",
+            "args": [
+                "run",
+                "--id", "research_001",
+                "--stage", "research",
+                "--client-question", "Analyze the market opportunity for AI agent orchestration platforms.",
+                "--agent", "market=./agents/market-intel-agent.get-info.json",
+                "--agent", "traction=./agents/traction-metrics-agent.get-info.json",
+                "--out", "./runs/research_001",
+                "--concurrency", "2"
+            ]
+        },
+        {
+            "name": "Saptami CLI - Custom",
             "type": "debugpy",
             "request": "launch",
             "module": "sapthame.cli",

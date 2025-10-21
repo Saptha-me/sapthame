@@ -3,9 +3,9 @@
 import logging
 from typing import Callable
 
-from sapthame.discovery.agent_registry import AgentRegistry
-from sapthame.protocol.a2a_client import A2AClient
-from sapthame.phases.base_phase import BasePhase
+from .discovery.agent_registry import AgentRegistry
+from .protocol.bindu_client import BinduClient
+from .phases.base_phase import BasePhase
 
 logger = logging.getLogger(__name__)
 
@@ -17,17 +17,17 @@ class ImplementationPhase(BasePhase):
         self,
         llm_client: Callable,
         prompt_loader: Callable,
-        a2a_client: A2AClient
+        bindu_client: BinduClient
     ):
         """Initialize implementation phase.
         
         Args:
             llm_client: Function to call LLM
             prompt_loader: Function to load implementation prompt
-            a2a_client: A2A protocol client
+            bindu_client: Bindu protocol client
         """
         super().__init__(llm_client, prompt_loader)
-        self.a2a_client = a2a_client
+        self.bindu_client = bindu_client
     
     def get_phase_name(self) -> str:
         """Get the name of this phase."""
@@ -87,7 +87,7 @@ class ImplementationPhase(BasePhase):
             "For each step:",
             "1. Identify the agent to call",
             "2. Prepare the message to send",
-            "3. Call the agent via A2A protocol",
+            "3. Call the agent via Bindu protocol",
             "4. Collect the response",
             "5. Use the response in subsequent steps",
             "",

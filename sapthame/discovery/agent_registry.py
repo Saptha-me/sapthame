@@ -3,7 +3,7 @@
 import logging
 from typing import Dict, List
 
-from sapthame.protocol.bindu_client import BinduClient
+from .protocol.bindu_client import BinduClient
 
 logger = logging.getLogger(__name__)
 

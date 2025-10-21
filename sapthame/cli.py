@@ -15,10 +15,11 @@ import click
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from sapthame.utils.cli_utils import CliDisplay, parse_agent_args, validate_stage_requirements
-from sapthame.utils.config import RunConfig
-from sapthame.utils.logging import get_logger
-from sapthame.utils.stage_executor import StageExecutor
+
+from .utils.cli_utils import CliDisplay, parse_agent_args, validate_stage_requirements
+from .utils.config import RunConfig
+from .utils.logging import get_logger
+from .utils.stage_executor import StageExecutor
 
 console = Console()
 logger = get_logger("sapthame.cli")
