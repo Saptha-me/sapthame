@@ -5,7 +5,7 @@ import logging
 from typing import List, Tuple, Optional
 from xml.etree import ElementTree as ET
 
-from .common.models import (
+from sapthame.common.models import (
     Action,
     QueryAgentAction,
     UpdateScratchpadAction,

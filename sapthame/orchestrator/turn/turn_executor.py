@@ -4,8 +4,7 @@ import logging
 
 from sapthame.orchestrator.actions.parser import ActionParser
 from sapthame.orchestrator.actions.handler import ActionHandler
-from sapthame.orchestrator.actions.entities.actions import FinishStageAction
-from sapthame.orchestrator.entities.execution_result import ExecutionResult
+from sapthame.common.models import FinishStageAction, ExecutionResult
 
 logger = logging.getLogger(__name__)
 

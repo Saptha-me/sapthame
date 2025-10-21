@@ -10,8 +10,6 @@ This example shows:
 import os
 from pathlib import Path
 from sapthame.orchestrator.conductor import Conductor
-from sapthame.orchestrator.utils.turn_logger import TurnLogger
-
 
 def example_research_stage():
     """Example: Run a research stage with the Conductor."""
@@ -23,7 +21,7 @@ def example_research_stage():
     conductor = Conductor(
         model="claude-sonnet-4-5-20250929",  # or your preferred model
         temperature=0.0,
-        api_key=os.getenv("ANTHROPIC_API_KEY"),  # Set your API key
+        api_key=os.getenv("OPENROUTER_API_KEY"),  # Set your API key
     )
     
     # Define agent URLs (replace with your actual agent endpoints)

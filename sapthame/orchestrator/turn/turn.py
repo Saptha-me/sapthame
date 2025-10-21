@@ -1,7 +1,7 @@
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass, field
 
-from sapthame.orchestrator.actions.entities.actions import Action
+from sapthame.common.models import Action
 
 @dataclass
 class Turn:

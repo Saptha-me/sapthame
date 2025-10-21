@@ -3,11 +3,11 @@
 import logging
 from typing import Tuple, Dict, Any
 
-from .discovery.agent_registry import AgentRegistry
-from .protocol.bindu_client import BinduClient
-from .orchestrator.state_managers.scratchpad import ScratchpadManager
-from .orchestrator.state_managers.todo import TodoManager
-from .common.models import (
+from sapthame.discovery.agent_registry import AgentRegistry
+from sapthame.protocol.bindu_client import BinduClient
+from sapthame.orchestrator.state_managers.scratchpad import ScratchpadManager
+from sapthame.orchestrator.state_managers.todo import TodoManager
+from sapthame.common.models import (
     Action,
     QueryAgentAction,
     UpdateScratchpadAction,

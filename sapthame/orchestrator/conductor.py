@@ -66,15 +66,15 @@ from typing import Optional, Dict, Any, List
 
 from sapthame.utils.llm_client import get_llm_response
 from sapthame.settings import app_settings
+from sapthame.discovery.agent_registry import AgentRegistry
+from sapthame.protocol.bindu_client import BinduClient
+from sapthame.utils.prompt_loader import load_prompt_from_file
 
 from .state_managers.state import State
 from .state_managers.conversation_history import ConversationHistory
 from .turn import Turn
-from .discovery.agent_registry import AgentRegistry
-from .protocol.bindu_client import BinduClient
-from .execution.phase_executor import PhaseExecutor
-from .utils.prompt_loader import load_prompt_from_file
-from .turn_executor import TurnExecutor
+
+from .turn.turn_executor import TurnExecutor
 from .actions.parser import ActionParser
 from .actions.handler import ActionHandler
 from .state_managers.scratchpad import ScratchpadManager
@@ -90,7 +90,7 @@ class Conductor:
     
     def __init__(
         self,
-        system_message_path: Optional[str] = None,
+        prompt_path: Optional[str] = None,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         api_key: Optional[str] = None,
@@ -100,24 +100,20 @@ class Conductor:
         """Initialize Conductor.
         
         Args:
-            system_message_path: Path to system message file
+            prompt_path: Path to system message file
             model: LLM model to use
             temperature: Temperature for LLM
             api_key: API key for LLM
             api_base: API base URL for LLM
         """
         # Store LLM configuration
-        self.system_message_path = system_message_path
+        self.prompt_path = prompt_path
         self.model = model or "claude-sonnet-4-5-20250929"
         self.temperature = temperature or 0.0
         self.api_key = api_key
         self.api_base = api_base
         
         logger.info(f"Conductor initialized with model={self.model}")
-
-        # Load base system message if provided
-        self.base_system_message = load_prompt_from_file(system_message_path) if system_message_path else None
-        self.system_message = None  # Will be set in setup() with agent info
         
         # These will be initialized in setup()
         self.agent_registry = None
@@ -149,9 +145,17 @@ class Conductor:
         logger.info("🌻 Sapthame Conductor - Starting")
         logger.info("=" * 60)
 
+        # Initialize state managers
+        self.scratchpad_manager = ScratchpadManager()
+        self.todo_manager = TodoManager()
         self.conversation_history = ConversationHistory(
             max_turns=app_settings.orchestrator.max_conversation_turns
         )
+        self.state = State(
+            agent_registry=self.agent_registry,
+            conversation_history=self.conversation_history
+        )
+
         
         # Initialize agent registry and discover agents
         self.agent_registry = AgentRegistry()
@@ -162,16 +166,6 @@ class Conductor:
         # Log agent details
         logger.info("\n" + self.agent_registry.view_all_agents())
 
-        # Initialize state managers
-        self.scratchpad_manager = ScratchpadManager()
-        self.todo_manager = TodoManager()
-
-        # Initialize state
-        self.state = State(
-            agent_registry=self.agent_registry,
-            conversation_history=self.conversation_history
-        )
-        
         # Initialize action components
         self.action_parser = ActionParser()
         self.action_handler = ActionHandler(
