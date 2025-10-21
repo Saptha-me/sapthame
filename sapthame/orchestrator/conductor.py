@@ -73,7 +73,9 @@ class Conductor:
         
         logger.info(f"Conductor initialized with model={self.model}")
 
-        self.system_message = load_prompt_from_file(system_message_path)
+        # Load base system message if provided
+        self.base_system_message = load_prompt_from_file(system_message_path) if system_message_path else None
+        self.system_message = None  # Will be set in setup() with agent info
         
         # These will be initialized in setup()
         self.agent_registry = None
@@ -138,9 +140,7 @@ class Conductor:
         self.executor = TurnExecutor(
             action_parser=self.action_parser,
             action_handler=self.action_handler
-        )
-        
-        
+        ) 
         
         logger.info("=" * 60)
         logger.info("SAPTAMI SETUP - Complete")
@@ -359,6 +359,46 @@ class Conductor:
             'todo': self.todo_manager.get_status(),
             'max_turns_reached': turns_executed >= max_turns
         }
+    
+    def _load_research_system_message(self) -> str:
+        """Load research stage system message with agent information."""
+        # Load base research prompt
+        if self.base_system_message:
+            base_prompt = self.base_system_message
+        else:
+            # Load default turn-based research prompt
+            prompt_path = Path(__file__).parent.parent / "system_msgs" / "research_turn_based_prompt.md"
+            with open(prompt_path, 'r', encoding='utf-8') as f:
+                base_prompt = f.read()
+        
+        # Build agent list section
+        agent_list = self._build_agent_list()
+        
+        # Inject agent list into prompt (replace placeholder or append)
+        if "{AGENT_LIST_HERE}" in base_prompt:
+            return base_prompt.replace("{AGENT_LIST_HERE}", agent_list)
+        else:
+            # Append agent list if no placeholder found
+            return base_prompt + f"\n\n## Available Agents\n\n{agent_list}"
+    
+    def _build_agent_list(self) -> str:
+        """Build formatted list of available agents."""
+        if not self.agent_registry or not self.agent_registry.agents:
+            return "(No agents available)"
+        
+        lines = []
+        for agent_id, agent in self.agent_registry.agents.items():
+            lines.append(f"### {agent.name} (`{agent_id}`)")
+            lines.append(f"**Description**: {agent.description}")
+            
+            if agent.skills:
+                lines.append("**Skills**:")
+                for skill in agent.skills:
+                    lines.append(f"- {skill.name}: {skill.description}")
+            
+            lines.append("")  # Empty line between agents
+        
+        return "\n".join(lines)
     
     def _build_research_prompt(
         self,
