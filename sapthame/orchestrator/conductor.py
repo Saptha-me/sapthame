@@ -155,18 +155,13 @@ class Conductor:
             agent_registry=self.agent_registry,
             conversation_history=self.conversation_history
         )
-
         
         # Initialize agent registry and discover agents
         self.agent_registry = AgentRegistry(
-            
+            agent_urls=agent_urls
         )
         logger.info(f"Discovering {len(agent_urls)} agent(s)...")
-        self.agent_registry.discover_agents(agent_urls)
-        logger.info(f"✓ Discovered {len(self.agent_registry.agents)} agent(s)")
-        
-        # Log agent details
-        logger.info("\n" + self.agent_registry.view_all_agents())
+
 
         # Initialize action components
         self.action_parser = ActionParser()
@@ -399,101 +394,3 @@ class Conductor:
             'todo': self.todo_manager.get_status(),
             'max_turns_reached': turns_executed >= max_turns
         }
-    
-    def _load_research_system_message(self) -> str:
-        """Load research stage system message with agent information."""
-        # Load base research prompt
-        if self.base_system_message:
-            base_prompt = self.base_system_message
-        else:
-            # Load default turn-based research prompt
-            prompt_path = Path(__file__).parent.parent / "system_msgs" / "research_turn_based_prompt.md"
-            with open(prompt_path, 'r', encoding='utf-8') as f:
-                base_prompt = f.read()
-        
-        # Build agent list section
-        agent_list = self._build_agent_list()
-        
-        # Inject agent list into prompt (replace placeholder or append)
-        if "{AGENT_LIST_HERE}" in base_prompt:
-            return base_prompt.replace("{AGENT_LIST_HERE}", agent_list)
-        else:
-            # Append agent list if no placeholder found
-            return base_prompt + f"\n\n## Available Agents\n\n{agent_list}"
-    
-    def _build_agent_list(self) -> str:
-        """Build formatted list of available agents."""
-        if not self.agent_registry or not self.agent_registry.agents:
-            return "(No agents available)"
-        
-        lines = []
-        for agent_id, agent in self.agent_registry.agents.items():
-            lines.append(f"### {agent.name} (`{agent_id}`)")
-            lines.append(f"**Description**: {agent.description}")
-            
-            if agent.skills:
-                lines.append("**Skills**:")
-                for skill in agent.skills:
-                    lines.append(f"- {skill.name}: {skill.description}")
-            
-            lines.append("")  # Empty line between agents
-        
-        return "\n".join(lines)
-    
-    def _build_research_prompt(
-        self,
-        client_question: str,
-        scratchpad: str,
-        todo: str,
-        conversation_history: str
-    ) -> str:
-        """Build research stage prompt."""
-        return f"""## Research Task
-{client_question}
-
-{scratchpad}
-
-{todo}
-
-## Conversation History
-{conversation_history}
-
-## Instructions
-Use the available actions to research this question thoroughly. Query research agents, organize findings in the scratchpad, track remaining questions in the todo list. When you have sufficient information, use the finish_stage action to complete the research.
-"""
-        
-    
-    def _get_llm_response(self, user_message: str, system_message: str) -> str:
-        """Get LLM response (following current project pattern).
-        
-        Args:
-            user_message: User message
-            system_message: System message
-            
-        Returns:
-            LLM response text
-        """
-        messages = [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_message}
-        ]
-        
-        # Track messages for token counting
-        if not self.conductor_messages:
-            self.conductor_messages.append({"role": "system", "content": system_message})
-        self.conductor_messages.append({"role": "user", "content": user_message})
-        
-        # Call centralized LLM client
-        response = get_llm_response(
-            messages=messages,
-            model=self.model,
-            temperature=self.temperature,
-            max_tokens=4096,
-            api_key=self.api_key,
-            api_base=self.api_base
-        )
-        
-        # Track assistant response
-        self.conductor_messages.append({"role": "assistant", "content": response})
-        
-        return response

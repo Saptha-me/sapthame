@@ -38,9 +38,6 @@ def example_research_stage():
     # Setup the conductor with agents
     conductor.setup(agent_urls=agent_urls, logging_dir=logging_dir)
     
-    # Initialize turn logger (optional)
-    conductor.turn_logger = TurnLogger(logging_dir / "research_turns")
-    
     # Load system message for research stage
     conductor.system_message = conductor._load_research_system_message()
     
