@@ -7,41 +7,86 @@
 #
 #  Thank you users! We ❤️ you! - 🌻
 
-"""Conductor for multi-agent coordination."""
+"""
+Conductor for multi-agent coordination and turn-based execution.
+
+The Conductor orchestrates complex tasks by coordinating multiple specialized agents
+through a turn-based execution model. It manages conversation history, state tracking,
+and action execution across research, planning, and implementation phases.
+
+Architecture:
+    - Turn-based execution: Each turn consists of LLM output → action parsing → execution
+    - State management: Tracks phase progress, outputs, and execution status
+    - Agent coordination: Discovers and delegates work to specialized agents
+    - Context management: Maintains conversation history, scratchpad, and todo list
+
+Example Usage:
+    ```python
+    from sapthame.orchestrator import Conductor
+    
+    # Initialize conductor
+    conductor = Conductor(
+        model="claude-sonnet-4-5-20250929",
+        temperature=0.0
+    )
+    
+    # Setup with agent endpoints
+    conductor.setup(
+        agent_urls=[
+            "http://localhost:8001/market-intel-agent.get-info.json",
+            "http://localhost:8002/traction-metrics-agent.get-info.json"
+        ]
+    )
+    
+    # Run research stage
+    result = conductor.run_research_stage(
+        client_question="What is the market opportunity for AI coding assistants?",
+        max_turns=20
+    )
+    
+    # Access results
+    print(f"Completed: {result['completed']}")
+    print(f"Findings: {result['finish_message']}")
+    print(f"Scratchpad: {result['scratchpad']}")
+    ```
+
+Key Components:
+    - State: Tracks phase progress and outputs
+    - ConversationHistory: Maintains turn-based interaction history
+    - ScratchpadManager: Temporary working memory for findings
+    - TodoManager: Task tracking with completion status
+    - TurnExecutor: Executes actions from LLM output
+    - ActionHandler: Handles agent queries and state mutations
+"""
+
+from __future__ import annotations as _annotations
 
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 
-from .utils.llm_client import get_llm_response
-from .state import State
-from .conversation_history import ConversationHistory
+from sapthame.utils.llm_client import get_llm_response
+from sapthame.settings import app_settings
+
+from .state_managers.state import State
+from .state_managers.conversation_history import ConversationHistory
 from .turn import Turn
 from .discovery.agent_registry import AgentRegistry
 from .protocol.bindu_client import BinduClient
 from .execution.phase_executor import PhaseExecutor
-from .utils.prompt_loader import (
-    load_prompt_from_file,
-    load_research_prompt,
-    load_planning_prompt,
-    load_implementation_prompt
-)
+from .utils.prompt_loader import load_prompt_from_file
 from .turn_executor import TurnExecutor
 from .actions.parser import ActionParser
 from .actions.handler import ActionHandler
 from .state_managers.scratchpad import ScratchpadManager
 from .state_managers.todo import TodoManager
 
-from .utils.logging import get_logger
+from sapthame.utils.logging import get_logger
 
-# Configure logging for the module
+
 logger = get_logger("sapthame.orchestrator.conductor")
 
 class Conductor:
     """Main conductor coordinating research, planning, and implementation phases."""
-    
-    @staticmethod
-    def name() -> str:
-        return "SapthaConductor"
     
     def __init__(
         self,
@@ -104,7 +149,9 @@ class Conductor:
         logger.info("🌻 Sapthame Conductor - Starting")
         logger.info("=" * 60)
 
-        self.conversation_history = ConversationHistory()
+        self.conversation_history = ConversationHistory(
+            max_turns=app_settings.orchestrator.max_conversation_turns
+        )
         
         # Initialize agent registry and discover agents
         self.agent_registry = AgentRegistry()

@@ -76,6 +76,28 @@ class LoggingSettings(BaseSettings):
     show_locals: bool = True
 
 
+class OrchestratorSettings(BaseSettings):
+    """Orchestrator configuration settings for turn-based execution."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="ORCHESTRATOR__",
+        extra="allow",
+    )
+
+    # Conversation History Settings
+    max_conversation_turns: int = Field(
+        default=100,
+        description="Maximum number of turns to keep in conversation history to prevent context explosion"
+    )
+    
+    # Turn Execution Settings
+    max_turns_per_stage: int = Field(
+        default=50,
+        description="Maximum number of turns allowed per execution stage"
+    )
+
+
 class ObservabilitySettings(BaseSettings):
     """Observability and instrumentation configuration settings."""
 
@@ -103,6 +125,7 @@ class Settings(BaseSettings):
 
     project: ProjectSettings = ProjectSettings()
     logging: LoggingSettings = LoggingSettings()
+    orchestrator: OrchestratorSettings = OrchestratorSettings()
     observability: ObservabilitySettings = ObservabilitySettings()
 
 

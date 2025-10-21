@@ -212,3 +212,22 @@ class FinishStageAction(Action):
     
     def __str__(self) -> str:
         return f"FinishStage(message='{self.message}')"
+
+
+@dataclass
+class TodoItem:
+    """Represents a single todo item."""
+    text: str
+    completed: bool = False
+    
+    def __str__(self) -> str:
+        """String representation of todo item."""
+        status = "✓" if self.completed else "○"
+        return f"{status} {self.text}"
+
+
+class Phase(str, Enum):
+    """Valid execution phases."""
+    RESEARCH = "research"
+    PLANNING = "planning"
+    IMPLEMENTATION = "implementation"
